@@ -72,10 +72,8 @@ func TestTransferTx(t *testing.T) {
 
 func TestForDeadLockTransferTx(t *testing.T) {
 	store := NewStore(testDbConn)
-
 	acct1 := createTestAccount()
 	acct2 := createTestAccount()
-
 	money := []int64{10, 10, 10, 10, 10, 10}
 	errors := make(chan error, len(money))
 
