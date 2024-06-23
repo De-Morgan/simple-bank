@@ -69,3 +69,41 @@ func TestTransferTx(t *testing.T) {
 	}
 
 }
+
+func TestForDeadLockTransferTx(t *testing.T) {
+	store := NewStore(testDbConn)
+
+	acct1 := createTestAccount()
+	acct2 := createTestAccount()
+
+	money := []int64{10, 10, 10, 10, 10, 10}
+	errors := make(chan error, len(money))
+
+	for i, m := range money {
+		fromId := acct1.ID
+		toId := acct2.ID
+		if i%2 == 0 {
+			fromId = acct2.ID
+			toId = acct1.ID
+		}
+		go func(amount int64) {
+			_, err := store.TransferTx(context.Background(), TransferParam{
+				FromAccountId: fromId,
+				ToAccountId:   toId,
+				Amount:        amount,
+			})
+			errors <- err
+		}(m)
+	}
+
+	for range money {
+		err := <-errors
+		require.NoError(t, err)
+	}
+
+	updatedAcct1, _ := store.GetAccount(context.Background(), acct1.ID)
+	require.Equal(t, acct1.Balance, updatedAcct1.Balance)
+	updatedAcct2, _ := store.GetAccount(context.Background(), acct2.ID)
+	require.Equal(t, acct2.Balance, updatedAcct2.Balance)
+
+}

@@ -13,7 +13,7 @@ import (
 func createParams() CreateAccountParams {
 	return CreateAccountParams{
 		Owner:    utils.RandomName(),
-		Balance:  utils.RandomMoney(),
+		Balance:  1000,
 		Currency: "NGN",
 	}
 }
