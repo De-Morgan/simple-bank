@@ -19,9 +19,9 @@ RETURNING id, from_account_id, to_account_id, amount, created_at
 `
 
 type CreateTransferParams struct {
-	FromAccountID int64
-	ToAccountID   int64
-	Amount        int64
+	FromAccountID int64 `json:"from_account_id"`
+	ToAccountID   int64 `json:"to_account_id"`
+	Amount        int64 `json:"amount"`
 }
 
 func (q *Queries) CreateTransfer(ctx context.Context, arg CreateTransferParams) (Transfer, error) {
@@ -73,9 +73,9 @@ OFFSET $3
 `
 
 type ListIncomingTransfersParams struct {
-	ToAccountID int64
-	Limit       int32
-	Offset      int32
+	ToAccountID int64 `json:"to_account_id"`
+	Limit       int32 `json:"limit"`
+	Offset      int32 `json:"offset"`
 }
 
 func (q *Queries) ListIncomingTransfers(ctx context.Context, arg ListIncomingTransfersParams) ([]Transfer, error) {
@@ -84,7 +84,7 @@ func (q *Queries) ListIncomingTransfers(ctx context.Context, arg ListIncomingTra
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Transfer
+	items := []Transfer{}
 	for rows.Next() {
 		var i Transfer
 		if err := rows.Scan(
@@ -112,9 +112,9 @@ OFFSET $3
 `
 
 type ListOutGoingTransfersParams struct {
-	FromAccountID int64
-	Limit         int32
-	Offset        int32
+	FromAccountID int64 `json:"from_account_id"`
+	Limit         int32 `json:"limit"`
+	Offset        int32 `json:"offset"`
 }
 
 func (q *Queries) ListOutGoingTransfers(ctx context.Context, arg ListOutGoingTransfersParams) ([]Transfer, error) {
@@ -123,7 +123,7 @@ func (q *Queries) ListOutGoingTransfers(ctx context.Context, arg ListOutGoingTra
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Transfer
+	items := []Transfer{}
 	for rows.Next() {
 		var i Transfer
 		if err := rows.Scan(
