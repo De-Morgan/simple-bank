@@ -59,8 +59,8 @@ func (server *Server) GetAccountById(cxt *gin.Context) {
 }
 
 type ListAccountRequest struct {
-	Page  int32
-	Limit int32 `binding:"required,min=2,max=50"`
+	Page  int32 `form:"page"`
+	Limit int32 `form:"limit" binding:"required,min=2,max=50"`
 }
 
 func (server *Server) ListAccounts(cxt *gin.Context) {
