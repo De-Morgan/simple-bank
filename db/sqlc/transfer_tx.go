@@ -21,7 +21,7 @@ type TransferResult struct {
 	ToEntry     Entry    `json:"to_entry"`
 }
 
-func (store *Store) TransferTx(cxt context.Context, arg TransferParam) (TransferResult, error) {
+func (store *SQLStore) TransferTx(cxt context.Context, arg TransferParam) (TransferResult, error) {
 	var result TransferResult
 
 	err := store.execTx(cxt, func(q *Queries) error {
