@@ -11,10 +11,12 @@ import (
 )
 
 func createParams() CreateAccountParams {
+	userCreateParms := createUserParams()
+	user, _ := createTestUser(userCreateParms)
 	return CreateAccountParams{
-		Owner:    utils.RandomName(),
+		Owner:    user.Username,
 		Balance:  1000,
-		Currency: "NGN",
+		Currency: utils.RandomCurrency(),
 	}
 }
 
