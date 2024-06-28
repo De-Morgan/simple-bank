@@ -16,13 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type testCase struct {
-	name          string
-	accountId     int64
-	setup         func(store *mock_db.MockStore)
-	checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
-}
-
 func TestGetAccountById(t *testing.T) {
 	account := randomAccount()
 	cntrl := gomock.NewController(t)
@@ -30,8 +23,8 @@ func TestGetAccountById(t *testing.T) {
 
 	scenerios := []testCase{
 		{
-			name:      "Get Account",
-			accountId: account.ID,
+			name: "Get Account",
+			id:   account.ID,
 			setup: func(store *mock_db.MockStore) {
 				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).Times(1).Return(account, nil)
 
@@ -42,8 +35,8 @@ func TestGetAccountById(t *testing.T) {
 			},
 		},
 		{
-			name:      "Not Found",
-			accountId: account.ID,
+			name: "Not Found",
+			id:   account.ID,
 			setup: func(store *mock_db.MockStore) {
 				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).Times(1).Return(db.Account{}, pgx.ErrNoRows)
 
@@ -54,8 +47,8 @@ func TestGetAccountById(t *testing.T) {
 			},
 		},
 		{
-			name:      "Internal Server Error",
-			accountId: account.ID,
+			name: "Internal Server Error",
+			id:   account.ID,
 			setup: func(store *mock_db.MockStore) {
 				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).Times(1).Return(db.Account{}, pgx.ErrTxClosed)
 			},
@@ -65,8 +58,8 @@ func TestGetAccountById(t *testing.T) {
 			},
 		},
 		{
-			name:      "Bad Request",
-			accountId: 0,
+			name: "Bad Request",
+			id:   0,
 			setup: func(store *mock_db.MockStore) {
 				store.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Times(0)
 			},
@@ -84,7 +77,7 @@ func TestGetAccountById(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			test.setup(mockStore)
 
-			url := fmt.Sprintf("/accounts/%d", test.accountId)
+			url := fmt.Sprintf("/accounts/%d", test.id)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 			server.router.ServeHTTP(recorder, request)
