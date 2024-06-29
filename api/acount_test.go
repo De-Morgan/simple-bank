@@ -73,7 +73,8 @@ func TestGetAccountById(t *testing.T) {
 		tN := test.name
 		t.Run(tN, func(t *testing.T) {
 			mockStore := mock_db.NewMockStore(cntrl)
-			server := NewServer(mockStore)
+			server := newTestServer(t, mockStore)
+
 			recorder := httptest.NewRecorder()
 			test.setup(mockStore)
 

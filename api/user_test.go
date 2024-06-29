@@ -60,7 +60,7 @@ func TestCreateUser(t *testing.T) {
 				)).Times(1).Return(user, nil)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				var userRes CreateUserResponse
+				var userRes UserResponse
 				require.Equal(t, http.StatusCreated, recorder.Code)
 				body, err := io.ReadAll(recorder.Body)
 				require.NoError(t, err)
@@ -97,7 +97,8 @@ func TestCreateUser(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			mockStore := mock_db.NewMockStore(cntrl)
-			server := NewServer(mockStore)
+			server := newTestServer(t, mockStore)
+
 			recorder := httptest.NewRecorder()
 			test.setup(mockStore)
 
