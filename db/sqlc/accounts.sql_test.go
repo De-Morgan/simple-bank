@@ -11,10 +11,12 @@ import (
 )
 
 func createParams() CreateAccountParams {
+	userCreateParms := createUserParams()
+	user, _ := createTestUser(userCreateParms)
 	return CreateAccountParams{
-		Owner:    utils.RandomName(),
+		Owner:    user.Username,
 		Balance:  1000,
-		Currency: "NGN",
+		Currency: utils.RandomCurrency(),
 	}
 }
 
@@ -53,7 +55,7 @@ func TestGetAccount(t *testing.T) {
 func TestListAccount(t *testing.T) {
 	acct := createTestAccount()
 	require.NotEmpty(t, acct)
-	accts, err := testQueries.ListAccount(context.Background(), ListAccountParams{1, 1})
+	accts, err := testQueries.ListAccount(context.Background(), ListAccountParams{acct.Owner, 1, 0})
 	require.NoError(t, err)
 	assert.NotEmpty(t, accts)
 	require.Len(t, accts, 1)
