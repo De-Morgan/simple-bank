@@ -1,5 +1,5 @@
 postgres:
-	docker run --name postgres16 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:16.3-alpine3.20
+	docker run --name --network bank-network postgres16 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:16.3-alpine3.20
 
 createdb:
 	docker exec -it postgres16 createdb --username=root --owner=root simple_bank
@@ -30,3 +30,9 @@ mock:
 
 server:
 	go run main.go
+
+docker_image_build:
+	docker build -t simplebank:latest .
+
+docker_create_container:
+	docker run --name simplebank --network bank-network -p 8080:8080 -e GIN_MODE=release -e DB_SOURCE="postgresql://root:secret@postgres16:5432/simple_bank?sslmode=disable" simplebank:latest 
