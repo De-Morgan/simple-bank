@@ -5,7 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	db "github.com/morgan/simplebank/db/sqlc"
+	"github.com/morgan/simplebank/token"
 )
 
 type TransferRequest struct {
@@ -26,10 +28,17 @@ func (server *Server) TransferMoney(cxt *gin.Context) {
 		ToAccountId:   request.ToAccountID,
 		Amount:        request.Amount,
 	}
-	if !server.checkAccountCurrency(cxt, request.Currency, arg.FromAccountId) {
+	payload := cxt.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	if account, valid := server.validateAccount(cxt, arg.FromAccountId, request.Currency); !valid {
 		return
+	} else {
+		if account.Owner != payload.Username {
+			cxt.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("transfer request declined")))
+			return
+		}
 	}
-	if !server.checkAccountCurrency(cxt, request.Currency, arg.ToAccountId) {
+	if _, valid := server.validateAccount(cxt, arg.ToAccountId, request.Currency); !valid {
 		return
 	}
 	transferSuccess, err := server.store.TransferTx(cxt, arg)
@@ -42,15 +51,19 @@ func (server *Server) TransferMoney(cxt *gin.Context) {
 
 }
 
-// Returns error if currency doesn't match account currency
-func (server *Server) checkAccountCurrency(cxt *gin.Context, currency string, accountId int64) bool {
+func (server *Server) validateAccount(cxt *gin.Context, accountId int64, currency string) (db.Account, bool) {
 	account, err := server.getAccount(cxt, accountId)
 	if err != nil {
-		return false
+		if err == pgx.ErrNoRows {
+			cxt.JSON(http.StatusNotFound, errorResponse(err))
+			return account, false
+		}
+		cxt.JSON(http.StatusInternalServerError, errorResponse(err))
+		return account, false
 	}
 	if account.Currency == currency {
-		return true
+		return account, true
 	}
 	cxt.JSON(http.StatusBadRequest, fmt.Errorf("currency mismatch, account currency is %s", account.Currency))
-	return false
+	return account, false
 }

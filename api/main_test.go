@@ -1,13 +1,11 @@
 package api
 
 import (
-	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	mock_db "github.com/morgan/simplebank/db/mock"
 	db "github.com/morgan/simplebank/db/sqlc"
 	"github.com/morgan/simplebank/utils"
 	"github.com/stretchr/testify/require"
@@ -28,11 +26,4 @@ func newTestServer(t *testing.T, store db.Store) *Server {
 	require.NoError(t, err)
 	return server
 
-}
-
-type testCase struct {
-	name          string
-	id            interface{}
-	setup         func(store *mock_db.MockStore)
-	checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 }

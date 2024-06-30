@@ -8,10 +8,10 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	db "github.com/morgan/simplebank/db/sqlc"
+	"github.com/morgan/simplebank/token"
 )
 
 type CreateAccountRequest struct {
-	Owner    string `json:"owner" binding:"required"`
 	Currency string `json:"currency" binding:"required,currency"`
 }
 
@@ -21,11 +21,12 @@ func (server *Server) CreateAccount(cxt *gin.Context) {
 		cxt.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
+	payload := cxt.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	arg := db.CreateAccountParams{
-		Owner:    request.Owner,
+		Owner:    payload.Username,
 		Currency: request.Currency,
 	}
-
 	account, err := server.store.CreateAccount(cxt, arg)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {
@@ -52,12 +53,17 @@ func (server *Server) GetAccountById(cxt *gin.Context) {
 		cxt.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
+	payload := cxt.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	account, err := server.getAccount(cxt, req.ID)
 	if err != nil {
 		return
 	}
+	if payload.Username != account.Owner {
+		cxt.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("unknown authorization")))
+		return
+	}
 	cxt.JSON(http.StatusOK, account)
-
 }
 
 // Get account and return error to the client if any
@@ -89,7 +95,10 @@ func (server *Server) ListAccounts(cxt *gin.Context) {
 	if req.Page == 0 {
 		req.Page = 1
 	}
+	payload := cxt.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	args := db.ListAccountParams{
+		Owner:  payload.Username,
 		Limit:  req.Limit,
 		Offset: (req.Page - 1) * req.Limit,
 	}
