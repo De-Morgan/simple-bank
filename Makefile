@@ -23,7 +23,6 @@ sqlc:
 	sqlc generate
 
 test:
-	make mock
 	go test -v -cover ./...
 
 mock:
