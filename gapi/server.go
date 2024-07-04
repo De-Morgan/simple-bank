@@ -10,10 +10,10 @@ import (
 )
 
 type Server struct {
+	pb.UnimplementedSimplebankServer
 	config     utils.Config
 	store      db.Store
 	tokenMaker token.Maker
-	pb.UnimplementedSimplebankServer
 }
 
 func NewServer(config utils.Config, store db.Store) (*Server, error) {

@@ -39,6 +39,7 @@ func (server *Server) LoginUser(cxt context.Context, request *pb.LoginUserReques
 		err = status.Errorf(codes.Internal, "Error creating refeshToken: %s", err)
 		return
 	}
+	mtd := server.extractMetadata(cxt)
 	_, err = server.store.CreateSession(cxt, db.CreateSessionParams{
 		ID: pgtype.UUID{
 			Bytes: payload.ID,
@@ -46,6 +47,8 @@ func (server *Server) LoginUser(cxt context.Context, request *pb.LoginUserReques
 		},
 		Username:     user.Username,
 		RefreshToken: refreshToken,
+		UserAgent:    mtd.UserAgent,
+		ClientIp:     mtd.ClientIp,
 		ExpiresAt: pgtype.Timestamptz{
 			Time: payload.ExpiresAt, Valid: true,
 		},

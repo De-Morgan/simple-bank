@@ -28,7 +28,10 @@ func (server *Server) CreateUser(cxt context.Context, request *pb.CreateUserRequ
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			switch pgErr.ConstraintName {
-			case "users_email_key", "users_pkey":
+			case "users_email_key":
+				err = status.Errorf(codes.AlreadyExists, "email already in use")
+				return
+			case "users_pkey":
 				err = status.Errorf(codes.AlreadyExists, "username already exist")
 				return
 			}
