@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -75,7 +76,11 @@ type LoginUserRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 }
 type LoginUserResponse struct {
-	AccessToken string `json:"access_token"`
+	SessionId             pgtype.UUID `json:"session_id"`
+	AccessToken           string      `json:"access_token"`
+	AccessTokenExpiresAt  time.Time   `json:"access_token_expires_at"`
+	RefreshToken          string      `json:"refresh_token"`
+	RefreshTokenExpiresAt time.Time   `json:"refresh_token_expires_at"`
 	UserResponse
 }
 
@@ -100,14 +105,34 @@ func (server *Server) LoginUser(cxt *gin.Context) {
 		cxt.JSON(http.StatusUnauthorized, errorResponse(err))
 		return
 	}
-	accessToken, err := server.tokenMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
+	accessToken, accessPayload, err := server.tokenMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
+	if err != nil {
+		cxt.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	refreshToken, payload, err := server.tokenMaker.CreateToken(user.Username, server.config.RefreshTokenDuration)
+	if err != nil {
+		cxt.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	session, err := server.createSession(cxt, CreateSessionRequest{
+		ID:           payload.ID,
+		Username:     user.Username,
+		RefreshToken: refreshToken,
+		ExpiresAt:    payload.ExpiresAt,
+		IsBlocked:    false,
+	})
 	if err != nil {
 		cxt.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 	loginRes := LoginUserResponse{
-		AccessToken:  accessToken,
-		UserResponse: newUserResponse(user),
+		SessionId:             session.ID,
+		RefreshToken:          refreshToken,
+		AccessToken:           accessToken,
+		AccessTokenExpiresAt:  accessPayload.ExpiresAt,
+		RefreshTokenExpiresAt: payload.ExpiresAt,
+		UserResponse:          newUserResponse(user),
 	}
 	cxt.JSON(http.StatusOK, loginRes)
 
