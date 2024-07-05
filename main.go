@@ -8,6 +8,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/morgan/simplebank/api"
@@ -32,9 +36,24 @@ func main() {
 		os.Exit(1)
 	}
 	defer conn.Close()
+
+	// Run db migration\
+	runDBMigration(config.MigrationUrl, config.DBSource)
+
 	store := db.NewStore(conn)
 	//runGrpcServer(config, store)
 	runGatewayServer(config, store)
+}
+
+func runDBMigration(migrationUrl, dbSource string) {
+	m, err := migrate.New(migrationUrl, dbSource)
+	if err != nil {
+		log.Fatalln("cannot create a new migration instance: ", err)
+	}
+	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Fatalln("failed to run migrate up: ", err)
+	}
+	log.Println("db migrated successfully")
 }
 
 func runGrpcServer(config utils.Config, store db.Store) {
