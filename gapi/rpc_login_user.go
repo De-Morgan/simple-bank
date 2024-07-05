@@ -8,12 +8,17 @@ import (
 	db "github.com/morgan/simplebank/db/sqlc"
 	"github.com/morgan/simplebank/pb"
 	"github.com/morgan/simplebank/utils"
+	"github.com/morgan/simplebank/validation"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (server *Server) LoginUser(cxt context.Context, request *pb.LoginUserRequest) (resp *pb.LoginUserResponse, err error) {
+	if violations := validateLoginUserRequest(request); violations != nil {
+		return nil, invalidArguementError(violations)
+	}
 	password := request.Password
 	user, err := server.store.GetUserByUsername(cxt, request.Username)
 	if err != nil {
@@ -66,6 +71,16 @@ func (server *Server) LoginUser(cxt context.Context, request *pb.LoginUserReques
 		RefreshToken:          refreshToken,
 		RefreshTokenExpiresAt: timestamppb.New(payload.ExpiresAt),
 		User:                  convertUser(user),
+	}
+	return
+}
+
+func validateLoginUserRequest(request *pb.LoginUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := validation.ValidateUsername(request.GetUsername()); err != nil {
+		violations = append(violations, fieldViolation("username", err))
+	}
+	if err := validation.ValidatePassword(request.GetPassword()); err != nil {
+		violations = append(violations, fieldViolation("password", err))
 	}
 	return
 }
