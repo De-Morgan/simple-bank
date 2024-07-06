@@ -3,11 +3,12 @@ syntax = "proto3";
 package pb;
 import "rpc_create_user.proto";
 import "rpc_login_user.proto";
+import "rpc_update_user.proto";
+
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "github.com/morgan/simplebank/pb";
-
 
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     info: {
@@ -24,15 +25,21 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 service Simplebank {
     rpc CreateUser (CreateUserRequest) returns (CreateUserResponse) {
         option (google.api.http) = {
-                 post: "/v1/create_user"
+                 post: "/v1/users/create"
                  body: "*"
                };
     }
     rpc LoginUser (LoginUserRequest) returns (LoginUserResponse) {
         option (google.api.http) = {
-            post: "/v1/login_user"
+            post: "/v1/users/login"
             body: "*"
           };
     }
+    rpc UpdateUser (UpdateUserRequest) returns (UpdateUserResponse) {
+      option (google.api.http) = {
+          patch: "/v1/users/{username}/update"
+          body: "data"
+        };
+  }
 }
 

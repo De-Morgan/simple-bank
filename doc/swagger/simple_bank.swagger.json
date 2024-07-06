@@ -21,7 +21,7 @@
     "application/json"
   ],
   "paths": {
-    "/v1/create_user": {
+    "/v1/users/create": {
       "post": {
         "operationId": "Simplebank_CreateUser",
         "responses": {
@@ -53,7 +53,7 @@
         ]
       }
     },
-    "/v1/login_user": {
+    "/v1/users/login": {
       "post": {
         "operationId": "Simplebank_LoginUser",
         "responses": {
@@ -77,6 +77,44 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/pbLoginUserRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Simplebank"
+        ]
+      }
+    },
+    "/v1/users/{username}/update": {
+      "patch": {
+        "operationId": "Simplebank_UpdateUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbUpdateUserResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbUpdateUserRequestBody"
             }
           }
         ],
@@ -143,6 +181,28 @@
           "type": "string",
           "format": "date-time"
         },
+        "user": {
+          "$ref": "#/definitions/pbUser"
+        }
+      }
+    },
+    "pbUpdateUserRequestBody": {
+      "type": "object",
+      "properties": {
+        "fullName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "pbUpdateUserResponse": {
+      "type": "object",
+      "properties": {
         "user": {
           "$ref": "#/definitions/pbUser"
         }

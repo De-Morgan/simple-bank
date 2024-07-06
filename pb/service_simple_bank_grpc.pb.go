@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion8
 const (
 	Simplebank_CreateUser_FullMethodName = "/pb.Simplebank/CreateUser"
 	Simplebank_LoginUser_FullMethodName  = "/pb.Simplebank/LoginUser"
+	Simplebank_UpdateUser_FullMethodName = "/pb.Simplebank/UpdateUser"
 )
 
 // SimplebankClient is the client API for Simplebank service.
@@ -29,6 +30,7 @@ const (
 type SimplebankClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error)
+	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UpdateUserResponse, error)
 }
 
 type simplebankClient struct {
@@ -59,12 +61,23 @@ func (c *simplebankClient) LoginUser(ctx context.Context, in *LoginUserRequest, 
 	return out, nil
 }
 
+func (c *simplebankClient) UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UpdateUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateUserResponse)
+	err := c.cc.Invoke(ctx, Simplebank_UpdateUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SimplebankServer is the server API for Simplebank service.
 // All implementations must embed UnimplementedSimplebankServer
 // for forward compatibility
 type SimplebankServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error)
+	UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserResponse, error)
 	mustEmbedUnimplementedSimplebankServer()
 }
 
@@ -77,6 +90,9 @@ func (UnimplementedSimplebankServer) CreateUser(context.Context, *CreateUserRequ
 }
 func (UnimplementedSimplebankServer) LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginUser not implemented")
+}
+func (UnimplementedSimplebankServer) UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
 }
 func (UnimplementedSimplebankServer) mustEmbedUnimplementedSimplebankServer() {}
 
@@ -127,6 +143,24 @@ func _Simplebank_LoginUser_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Simplebank_UpdateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimplebankServer).UpdateUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Simplebank_UpdateUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimplebankServer).UpdateUser(ctx, req.(*UpdateUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Simplebank_ServiceDesc is the grpc.ServiceDesc for Simplebank service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -141,6 +175,10 @@ var Simplebank_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "LoginUser",
 			Handler:    _Simplebank_LoginUser_Handler,
+		},
+		{
+			MethodName: "UpdateUser",
+			Handler:    _Simplebank_UpdateUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
