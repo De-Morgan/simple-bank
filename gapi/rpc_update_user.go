@@ -19,6 +19,13 @@ func (server *Server) UpdateUser(cxt context.Context, request *pb.UpdateUserRequ
 	if violations := validateUpdateUserRequest(request); violations != nil {
 		return nil, invalidArguementError(violations)
 	}
+	payload, err := server.authorizeUser(cxt)
+	if err != nil {
+		return nil, unAuthenticatedError(err)
+	}
+	if payload.Username != request.GetUsername() {
+		return nil, status.Errorf(codes.PermissionDenied, "can not update other user's info")
+	}
 	password := request.GetData().GetPassword()
 	var hashedPass string
 	if password != "" {
