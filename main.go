@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/morgan/simplebank/gapi"
 	"github.com/morgan/simplebank/pb"
 	"github.com/morgan/simplebank/utils"
+	"github.com/morgan/simplebank/worker"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -48,8 +50,13 @@ func main() {
 	runDBMigration(config.MigrationUrl, config.DBSource)
 
 	store := db.NewStore(conn)
-	go runGrpcServer(config, store)
-	runGatewayServer(config, store)
+	redisClientOpt := asynq.RedisClientOpt{
+		Addr: config.RedisAddress,
+	}
+	taskDistributor := worker.NewRedisDistributor(redisClientOpt)
+	go runTaskProcessor(redisClientOpt, store)
+	go runGrpcServer(config, store, taskDistributor)
+	runGatewayServer(config, store, taskDistributor)
 }
 
 func runDBMigration(migrationUrl, dbSource string) {
@@ -66,9 +73,17 @@ func runDBMigration(migrationUrl, dbSource string) {
 	}
 	log.Info().Msg("db migrated successfully")
 }
+func runTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store) {
+	taskProcessor := worker.NewRedisTaskProcessor(&redisOpt, store)
+	log.Info().Msg("start task processor")
+	err := taskProcessor.Start()
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to start processor")
+	}
+}
 
-func runGrpcServer(config utils.Config, store db.Store) {
-	server, err := gapi.NewServer(config, store)
+func runGrpcServer(config utils.Config, store db.Store, taskDistributor worker.TaskDistributor) {
+	server, err := gapi.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Msg("Can't start server")
 	}
@@ -90,8 +105,8 @@ func runGrpcServer(config utils.Config, store db.Store) {
 
 }
 
-func runGatewayServer(config utils.Config, store db.Store) {
-	server, err := gapi.NewServer(config, store)
+func runGatewayServer(config utils.Config, store db.Store, taskDistributor worker.TaskDistributor) {
+	server, err := gapi.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Msg("Can't start server")
 	}

@@ -51,3 +51,7 @@ proto:
 
 evans:
 	 evans --host localhost --port 50051 -r repl
+	
+
+redis:
+	docker run --name redis -p 6379:6379 redis:7-alpine

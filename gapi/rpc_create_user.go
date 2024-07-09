@@ -2,12 +2,15 @@ package gapi
 
 import (
 	"context"
+	"time"
 
+	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgconn"
 	db "github.com/morgan/simplebank/db/sqlc"
 	"github.com/morgan/simplebank/pb"
 	"github.com/morgan/simplebank/utils"
 	"github.com/morgan/simplebank/validation"
+	"github.com/morgan/simplebank/worker"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -42,6 +45,20 @@ func (server *Server) CreateUser(cxt context.Context, request *pb.CreateUserRequ
 		}
 		err = status.Errorf(codes.Internal, "failed to create user %s:%s", arg.Username, err)
 		return
+	}
+	//Todo start send email verification worker
+	taskPayload := &worker.PayloadSendVerificationEmail{
+		Username: user.Username,
+	}
+
+	opts := []asynq.Option{
+		asynq.MaxRetry(10),
+		asynq.ProcessIn(10 * time.Second),
+		asynq.Queue(worker.QueueCritical),
+	}
+	err = server.taskDistributor.DistributeTaskSendVerificationEmail(cxt, taskPayload, opts...)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to distribute task to send verification mail: %s", err)
 	}
 	resp = &pb.CreateUserResponse{
 		User: convertUser(user),

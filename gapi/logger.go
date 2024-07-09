@@ -56,11 +56,7 @@ func HttpLogger(handler http.Handler) http.Handler {
 			ResponseWriter: w,
 			StatusCode:     http.StatusOK,
 		}
-		log.Printf(" HttpLogger status code beffore is %d", rec.StatusCode)
-
 		handler.ServeHTTP(rec, r)
-		log.Printf(" HttpLogger status codea after is %d", rec.StatusCode)
-
 		duration := time.Since(stime)
 		logger := log.Info()
 		if rec.StatusCode > 299 {
