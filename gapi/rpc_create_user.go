@@ -31,7 +31,21 @@ func (server *Server) CreateUser(cxt context.Context, request *pb.CreateUserRequ
 		Email:          request.GetEmail(),
 		HashedPassword: hash,
 	}
-	user, err := server.store.CreateUser(cxt, arg)
+	txResult, err := server.store.CreateUserTx(cxt, db.CreateUserTxParam{
+		CreateUserParams: arg,
+		AfterCreate: func(user db.User) error {
+			// Todo start send email verification worker
+			taskPayload := &worker.PayloadSendVerificationEmail{
+				Username: user.Username,
+			}
+			opts := []asynq.Option{
+				asynq.MaxRetry(10),
+				asynq.ProcessIn(10 * time.Second),
+				asynq.Queue(worker.QueueCritical),
+			}
+			return server.taskDistributor.DistributeTaskSendVerificationEmail(cxt, taskPayload, opts...)
+		},
+	})
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			switch pgErr.ConstraintName {
@@ -46,22 +60,9 @@ func (server *Server) CreateUser(cxt context.Context, request *pb.CreateUserRequ
 		err = status.Errorf(codes.Internal, "failed to create user %s:%s", arg.Username, err)
 		return
 	}
-	//Todo start send email verification worker
-	taskPayload := &worker.PayloadSendVerificationEmail{
-		Username: user.Username,
-	}
 
-	opts := []asynq.Option{
-		asynq.MaxRetry(10),
-		asynq.ProcessIn(10 * time.Second),
-		asynq.Queue(worker.QueueCritical),
-	}
-	err = server.taskDistributor.DistributeTaskSendVerificationEmail(cxt, taskPayload, opts...)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to distribute task to send verification mail: %s", err)
-	}
 	resp = &pb.CreateUserResponse{
-		User: convertUser(user),
+		User: convertUser(txResult.User),
 	}
 	return
 }

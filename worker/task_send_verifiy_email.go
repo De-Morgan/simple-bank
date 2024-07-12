@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/hibiken/asynq"
-	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
 
@@ -47,9 +46,9 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Cont
 	}
 	user, err := processor.store.GetUserByUsername(ctx, payload.Username)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return fmt.Errorf("user doesn't exist: %w", asynq.SkipRetry)
-		}
+		// if err == pgx.ErrNoRows {
+		// 	return fmt.Errorf("user doesn't exist: %w", asynq.SkipRetry)
+		// }
 		return fmt.Errorf("failed to get user: %w", err)
 	}
 	//TODO send user
