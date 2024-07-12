@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -10,6 +11,7 @@ import (
 type Store interface {
 	Querier
 	TransferTx(cxt context.Context, arg TransferParam) (TransferResult, error)
+	CreateUserTx(cxt context.Context, arg CreateUserTxParam) (CreateUserTxResult, error)
 }
 
 // / Store provides all functions to execute individual query or transaction
